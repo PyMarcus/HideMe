@@ -2,6 +2,7 @@ package encrypt
 
 import (
 	"crypto/aes"
+	"crypto/cipher"
 	"log"
 	"os"
 )
@@ -28,11 +29,13 @@ func EncryptFile(key []byte, inputFile, outputFile string) error{
 	return nil
 }
 
-func createCypher(key []byte)error{
+func createCipher(key []byte) (cipher.Block, error){
 	block, err := aes.NewCipher(key)
 
 	if err != nil{
 		log.Println("[-] Fail to create cypher")
-		return err
+		return nil, err
 	}
+
+	return block, nil
 }
