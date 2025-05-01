@@ -1,6 +1,7 @@
 package encrypt
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,8 +13,7 @@ var (
 
 func TestEncryptFile(t *testing.T) {
 	input := "input.txt"
-	output := "output.txt"
-	err := EncryptFile(key, input, output)
+	err := EncryptFile(key, input)
 	assert.NoError(t, err)
 }
 
@@ -22,4 +22,22 @@ func TestCreateCipher(t *testing.T){
 	
 	assert.NoError(t, err)
 	assert.NotNil(t, c)
+}
+
+func TestCreateGCM(t *testing.T){
+	block, _ := createCipher(key)
+
+	c, err := createGCM(block)
+	
+	assert.NoError(t, err)
+	assert.NotNil(t, c)
+}
+
+func TestReadFile(t *testing.T){
+	input := "input.txt"
+
+	inFile, _ := os.OpenFile(input, os.O_RDWR, 0600)
+
+	_, err := readFile(inFile)
+	assert.NoError(t, err)
 }
