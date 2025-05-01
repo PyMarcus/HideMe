@@ -51,6 +51,15 @@ func EncryptFile(key []byte, inputFile string) error{
 		return err 
 	}
 
+	cipherData := gcm.Seal(nil, nonce, plainData, nil)
+
+	err = overWriteFile(inFile, cipherData, gcm)
+
+	if err != nil{
+		log.Println("[-] Fail to encrypt data")
+		return err
+	}
+
 	return nil
 }
 
@@ -79,4 +88,14 @@ func readFile(file *os.File) ([]byte, error){
 		return nil, err
 	}
 	return plainData, nil
+}
+
+func overWriteFile(inFile *os.File, dataEncrypted []byte, gcm cipher.AEAD)error{
+	_, err := inFile.WriteAt(dataEncrypted, int64(gcm.NonceSize()))
+
+	if err != nil{
+		return err
+	}
+
+	return err
 }

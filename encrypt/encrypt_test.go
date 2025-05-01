@@ -41,3 +41,20 @@ func TestReadFile(t *testing.T){
 	_, err := readFile(inFile)
 	assert.NoError(t, err)
 }
+
+func TestIntegrationOnverWriteFile(t *testing.T){
+	input := "input.txt"
+	block, _ := createCipher(key)
+
+	c, _ := createGCM(block)
+	inFile, _ := os.OpenFile(input, os.O_RDWR, 0600)
+
+	fileContent, _ := readFile(inFile)
+	
+	nonce := make([]byte, c.NonceSize())
+	cipherData := c.Seal(nil, nonce, fileContent, nil)
+
+	err := overWriteFile(inFile, cipherData, c)
+
+	assert.NoError(t, err)
+}
