@@ -5,97 +5,86 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"io"
-	"log"
 	"os"
 )
 
-func EncryptFile(key []byte, inputFile string) error{
+func EncryptFile(key []byte, inputFile string) error {
 	inFile, err := os.OpenFile(inputFile, os.O_RDWR, 0600)
-
-	if err != nil{
-		log.Println("[-] Fail to open file " + inputFile)
-		return err 
+	if err != nil {
+		return err
 	}
-
 	defer inFile.Close()
 
-	cipher, err := createCipher(key)
-
-	if err != nil{
-		log.Println("[-] Fail to create cipher")
+	plainData, err := readFile(inFile)
+	if err != nil {
 		return err
 	}
 
+	cipherBlock, err := createCipher(key)
+	if err != nil {
+		return err
+	}
 
-	gcm, err := createGCM(cipher)
-
-	if err != nil{
-		log.Println("[-] Fail to create gcm")
+	gcm, err := createGCM(cipherBlock)
+	if err != nil {
 		return err
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
-	if _, err = rand.Read(nonce); err != nil {
-		log.Println("[-] Fail to create nonce")
+	if _, err := rand.Read(nonce); err != nil {
 		return err
-	}
-
-	if _, err = inFile.WriteAt(nonce, 0); err != nil {
-		return err
-	}
-
-	plainData, err := readFile(inFile)
-	
-	if err != nil{
-		log.Println("[-] Fail to read file")
-		return err 
 	}
 
 	cipherData := gcm.Seal(nil, nonce, plainData, nil)
 
-	err = overWriteFile(inFile, cipherData, gcm)
+	if _, err := inFile.Seek(0, 0); err != nil {
+		return err
+	}
 
-	if err != nil{
-		log.Println("[-] Fail to encrypt data")
+	err = writeFile(inFile, nonce, cipherData)
+	if err != nil {
+		return err
+	}
+
+	if err := inFile.Truncate(int64(len(nonce) + len(cipherData))); err != nil {
+		return err
+	}
+	
+	return nil
+}
+
+func writeFile(inFile *os.File, nonce []byte, dataEncrypted []byte) error {
+	if _, err := inFile.WriteAt(nonce, 0); err != nil {
+		return err
+	}
+
+	if _, err := inFile.WriteAt(dataEncrypted, int64(len(nonce))); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func createCipher(key []byte) (cipher.Block, error){
+func createCipher(key []byte) (cipher.Block, error) {
 	block, err := aes.NewCipher(key)
-
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
-
 	return block, nil
 }
 
-func createGCM(c cipher.Block)(cipher.AEAD, error){
+func createGCM(c cipher.Block) (cipher.AEAD, error) {
 	aesGCM, err := cipher.NewGCM(c)
 	if err != nil {
 		return nil, err
 	}
-
-	return aesGCM, err
+	return aesGCM, nil
 }
 
-func readFile(file *os.File) ([]byte, error){
+func readFile(file *os.File) ([]byte, error) {
 	plainData, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
 	return plainData, nil
-}
-
-func overWriteFile(inFile *os.File, dataEncrypted []byte, gcm cipher.AEAD)error{
-	_, err := inFile.WriteAt(dataEncrypted, int64(gcm.NonceSize()))
-
-	if err != nil{
-		return err
-	}
-
-	return err
 }

@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	key = []byte("F1D2D2F924E986AC86FDF7B36C94BCDW")
+	key = []byte("F1D2D2F924E986AC86FDF7B36C94BCD1")
 )
 
 func TestEncryptFile(t *testing.T) {
@@ -39,22 +39,5 @@ func TestReadFile(t *testing.T){
 	inFile, _ := os.OpenFile(input, os.O_RDWR, 0600)
 
 	_, err := readFile(inFile)
-	assert.NoError(t, err)
-}
-
-func TestIntegrationOnverWriteFile(t *testing.T){
-	input := "input.txt"
-	block, _ := createCipher(key)
-
-	c, _ := createGCM(block)
-	inFile, _ := os.OpenFile(input, os.O_RDWR, 0600)
-
-	fileContent, _ := readFile(inFile)
-	
-	nonce := make([]byte, c.NonceSize())
-	cipherData := c.Seal(nil, nonce, fileContent, nil)
-
-	err := overWriteFile(inFile, cipherData, c)
-
 	assert.NoError(t, err)
 }
